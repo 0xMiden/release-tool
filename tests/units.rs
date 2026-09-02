@@ -6,7 +6,7 @@
 
 use std::path::PathBuf;
 
-use midenc_release::config::Config;
+use miden_release_tool::config::Config;
 
 pub fn load(body: &str, label: &str) -> Config {
     let dir = std::env::temp_dir().join(format!(
@@ -206,7 +206,7 @@ unit = "main"
     assert_eq!(config.order().unwrap(), ["main"]);
 }
 
-use midenc_release::{
+use miden_release_tool::{
     intent::{Intent, Stage, Tag},
     plan::{Plan, SealedPackage},
     staging,
@@ -218,9 +218,9 @@ fn files(names: &[&str]) -> Vec<PathBuf> {
 
 fn plan_for(units: &[&str]) -> Plan {
     Plan {
-        schema_version: midenc_release::plan::SCHEMA_VERSION,
+        schema_version: miden_release_tool::plan::SCHEMA_VERSION,
         intent: Intent {
-            schema_version: midenc_release::intent::SCHEMA_VERSION,
+            schema_version: miden_release_tool::intent::SCHEMA_VERSION,
             subject: "abc123".into(),
             candidate_digest: "cand".into(),
             stages: units

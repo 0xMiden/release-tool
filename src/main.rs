@@ -5,7 +5,7 @@ use std::{
 
 use anyhow::{Context, Result, bail};
 use clap::{Parser, Subcommand};
-use midenc_release::{
+use miden_release_tool::{
     candidate::{Candidate, UnitDeclaration, render_tag},
     closure,
     config::Config,
@@ -333,7 +333,7 @@ fn main() -> Result<()> {
                 // `private-version`. Refused here, before anything is read or
                 // written.
                 config.releasable_unit(&unit)?;
-                let current = midenc_release::bundle::read_version(&ws.root, unit_config)?;
+                let current = miden_release_tool::bundle::read_version(&ws.root, unit_config)?;
                 let new = requested.unwrap_or_else(|| version::next_minor(&current));
                 version::check_direction(&current, &new, force)?;
                 println!("{unit}: {current} -> {new}");
@@ -341,7 +341,8 @@ fn main() -> Result<()> {
                     println!("\ndry run: nothing written");
                     return Ok(());
                 }
-                let written = midenc_release::bundle::write_version(&ws.root, unit_config, &new)?;
+                let written =
+                    miden_release_tool::bundle::write_version(&ws.root, unit_config, &new)?;
                 println!("updated {}", written.display());
                 update_candidate(
                     &manifest_dir.join(".release/release.toml"),
@@ -418,7 +419,7 @@ fn main() -> Result<()> {
             // Fail early and legibly on a cross-unit dependency that is neither
             // selected nor published, rather than letting it surface as a Cargo
             // resolution error during packaging.
-            let index = midenc_release::registry::client::SparseIndex::new(
+            let index = miden_release_tool::registry::client::SparseIndex::new(
                 "sparse+https://index.crates.io/",
             );
 
@@ -564,7 +565,7 @@ fn main() -> Result<()> {
                 }
             };
 
-            let client = midenc_release::registry::client::SparseIndex::new(index);
+            let client = miden_release_tool::registry::client::SparseIndex::new(index);
             let result = reconcile::reconcile(&ws, &client, &planned)?;
 
             for outcome in &result.outcomes {
@@ -617,7 +618,7 @@ fn main() -> Result<()> {
                 println!("(dry run: nothing will be published)");
             }
 
-            let index = midenc_release::registry::client::SparseIndex::new(index_url);
+            let index = miden_release_tool::registry::client::SparseIndex::new(index_url);
             let options = executor::Options {
                 dry_run,
                 cargo_home: ws.root.join("target/release-publish/cargo-home"),
@@ -629,9 +630,11 @@ fn main() -> Result<()> {
             // registry. A rehearsal gets one that refuses everything: there is
             // no throwaway GitHub, so a tag created during a rehearsal would be
             // a real, permanent tag for a version that was never released.
-            let github: Box<dyn midenc_release::github::GitHub> = match &target {
+            let github: Box<dyn miden_release_tool::github::GitHub> = match &target {
                 executor::Target::CratesIo => github_client(api_base)?,
-                executor::Target::Rehearsal { .. } => Box::new(midenc_release::github::NoGitHub),
+                executor::Target::Rehearsal { .. } => {
+                    Box::new(miden_release_tool::github::NoGitHub)
+                }
             };
             let record = executor::execute(&ws, &plan, &index, github.as_ref(), &target, &options)?;
             for entry in &record.entries {
@@ -645,7 +648,7 @@ fn main() -> Result<()> {
         }
         Command::Bundle { unit, output } => {
             let name = resolve_artifact_unit(&config, unit.as_deref())?;
-            let built = midenc_release::bundle::build(&ws.root, &name, config.unit(&name)?)?;
+            let built = miden_release_tool::bundle::build(&ws.root, &name, config.unit(&name)?)?;
 
             // The archive is built from tracked files, so anything else under an
             // included path is silently absent. Say so before writing it.
@@ -711,7 +714,7 @@ fn main() -> Result<()> {
             range,
             version,
         } => {
-            let prompt = midenc_release::changelog::prepare(&ws, &config, &unit, range)?;
+            let prompt = miden_release_tool::changelog::prepare(&ws, &config, &unit, range)?;
             print!("{}", prompt.render(version.as_deref()));
             Ok(())
         }
@@ -719,7 +722,7 @@ fn main() -> Result<()> {
             let plan = release_plan::Plan::load(&plan)?;
             let github = github_client(api_base)?;
 
-            let finalized = midenc_release::finalize::finalize(github.as_ref(), &plan)?;
+            let finalized = miden_release_tool::finalize::finalize(github.as_ref(), &plan)?;
             for entry in &finalized {
                 let state = if entry.already_published {
                     "already published"
@@ -752,7 +755,7 @@ fn main() -> Result<()> {
                 binary.display(),
                 output.display(),
                 archive.len(),
-                midenc_release::registry::sha256_hex(&archive)
+                miden_release_tool::registry::sha256_hex(&archive)
             );
             Ok(())
         }
@@ -791,7 +794,7 @@ fn update_candidate(
         .ok_or_else(|| anyhow::anyhow!("unit '{name}' is not defined in .release/config.toml"))?;
 
     let mut candidate = Candidate::load(path).unwrap_or_else(|_| Candidate {
-        schema_version: midenc_release::candidate::SUPPORTED_SCHEMA_VERSION,
+        schema_version: miden_release_tool::candidate::SUPPORTED_SCHEMA_VERSION,
         units: Vec::new(),
         declarations: Default::default(),
     });
@@ -814,7 +817,7 @@ fn update_candidate(
 
 /// The artifact unit to act on. A repository with exactly one needs no flag.
 fn resolve_artifact_unit(config: &Config, requested: Option<&str>) -> Result<String> {
-    use midenc_release::config::UnitKind;
+    use miden_release_tool::config::UnitKind;
 
     let artifacts: Vec<&String> =
         config.units_of_kind(UnitKind::Artifact).map(|(name, _)| name).collect();
@@ -839,7 +842,7 @@ fn resolve_artifact_unit(config: &Config, requested: Option<&str>) -> Result<Str
 }
 
 /// A GitHub client, pointed at a stub when a base URL is supplied.
-fn github_client(api_base: Option<String>) -> Result<Box<dyn midenc_release::github::GitHub>> {
+fn github_client(api_base: Option<String>) -> Result<Box<dyn miden_release_tool::github::GitHub>> {
     Ok(match api_base {
         Some(base) => {
             let repo =

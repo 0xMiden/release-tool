@@ -8,7 +8,7 @@
 
 use std::{fs, path::Path, sync::Arc};
 
-use midenc_release::{
+use miden_release_tool::{
     reconcile::{self, Disposition, Planned},
     registry::{Faults, NoUpstream, Registry, client::SparseIndex},
     workspace::{EdgeKind, Package, Workspace},

@@ -56,9 +56,16 @@ jobs:
           rustup update --no-self-update
           rustc --version
 
+      - &install-cargo-make
+        name: Install cargo-make
+        run: |
+          if ! cargo make --version 2>/dev/null; then
+            cargo install cargo-make --force
+          fi
+
       - &install-release-tool
         name: Build release-tool
-        run: cargo install --locked --force miden-release-tool
+        run: cargo make install-release-tool
 
       # The subject is GITHUB_SHA -- the commit this run checked out -- and it
       # must be main's tip. Attestations are built from the run's own claims, so
@@ -124,6 +131,7 @@ jobs:
           persist-credentials: false
 
       - *install-rust
+      - *install-cargo-make
       - *install-release-tool
 
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
@@ -169,12 +177,8 @@ jobs:
         # Explicit runner labels rather than `*-latest`, so an image rotation
         # does not silently change what the released bytes were built on.
         include:
-          - { runner: ubuntu-24.04, target: x86_64-unknown-linux-gnu, binary: midenc }
-          - { runner: ubuntu-24.04, target: x86_64-unknown-linux-gnu, binary: cargo-miden }
-          - { runner: ubuntu-24.04, target: x86_64-unknown-linux-gnu, binary: miden-objtool }
-          - { runner: macos-15, target: aarch64-apple-darwin, binary: midenc }
-          - { runner: macos-15, target: aarch64-apple-darwin, binary: cargo-miden }
-          - { runner: macos-15, target: aarch64-apple-darwin, binary: miden-objtool }
+          - { runner: ubuntu-24.04, target: x86_64-unknown-linux-gnu, binary: release-tool }
+          - { runner: macos-15, target: aarch64-apple-darwin, binary: release-tool }
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
@@ -187,6 +191,7 @@ jobs:
           rustup target add ${{ matrix.target }}
           rustc --version
 
+      - *install-cargo-make
       - *install-release-tool
 
       - name: Build
@@ -204,15 +209,7 @@ jobs:
           TARGET: ${{ matrix.target }}
         run: |
           set -euo pipefail
-          # `cargo-miden` is a cargo subcommand, not a standalone program: it
-          # looks for a literal `miden` token in argv and panics without one, so
-          # `cargo-miden --version` is not a valid invocation of it. Everything
-          # else here is an ordinary executable.
-          if [ "${BINARY}" = "cargo-miden" ]; then
-            "./target/${TARGET}/release/${BINARY}" miden --version
-          else
-            "./target/${TARGET}/release/${BINARY}" --version
-          fi
+          "./target/${TARGET}/release/${BINARY}" --version
 
       - name: Archive
         run: |
@@ -266,6 +263,7 @@ jobs:
           persist-credentials: false
 
       - *install-rust
+      - *install-cargo-make
       - *install-release-tool
 
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
@@ -310,6 +308,7 @@ jobs:
           persist-credentials: false
 
       - *install-rust
+      - *install-cargo-make
       - *install-release-tool
 
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
@@ -367,6 +366,7 @@ jobs:
           persist-credentials: false
 
       - *install-rust
+      - *install-cargo-make
       - *install-release-tool
 
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0

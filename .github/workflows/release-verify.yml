@@ -45,9 +45,16 @@ jobs:
           rustup update --no-self-update
           rustc --version
 
+      - &install-cargo-make
+        name: Install cargo-make
+        run: |
+          if ! cargo make --version 2>/dev/null; then
+            cargo install cargo-make --force
+          fi
+
       - &install-release-tool
         name: Build release-tool
-        run: cargo install --locked --force miden-release-tool
+        run: cargo make install-release-tool
 
       # Package classification, publishability, private-dependency edges, the
       # frozen private-crate versions, and active `[patch]` entries. An active
@@ -76,6 +83,7 @@ jobs:
           persist-credentials: false
 
       - *install-rust
+      - *install-cargo-make
       - *install-release-tool
 
       - name: Verify the package closure

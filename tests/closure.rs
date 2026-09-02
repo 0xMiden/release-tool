@@ -7,7 +7,7 @@
 
 use std::{fs, path::Path};
 
-use midenc_release::closure::{self, Options};
+use miden_release_tool::closure::{self, Options};
 
 fn write(path: &Path, contents: &str) {
     fs::create_dir_all(path.parent().unwrap()).unwrap();
@@ -162,7 +162,7 @@ fn every_selected_package_must_reach_the_registry() {
 /// Until a plan is sealed, an existing version can only be skipped.
 #[test]
 fn a_sealed_plan_turns_a_foreign_version_into_a_conflict() {
-    use midenc_release::{
+    use miden_release_tool::{
         intent::{Intent, Stage, Tag},
         plan,
         reconcile::{self, Conflict, Disposition},
@@ -216,7 +216,7 @@ unit = "sdk"
 "#,
     )
     .unwrap();
-    let config = midenc_release::config::Config::load(&config_path).unwrap();
+    let config = miden_release_tool::config::Config::load(&config_path).unwrap();
 
     let sealed = plan::seal(&config, &intent, &built).unwrap();
 

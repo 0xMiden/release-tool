@@ -352,7 +352,7 @@ args = [
     "unstable-options",
     "build",
     "-p",
-    "midenc-release",
+    "miden-release-tool",
     "--bin",
     "release-tool",
     "--artifact-dir",

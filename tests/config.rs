@@ -7,7 +7,7 @@
 
 use std::path::PathBuf;
 
-use midenc_release::config::{Config, UnitKind, VersionSource};
+use miden_release_tool::config::{Config, UnitKind, VersionSource};
 
 fn write(body: &str, label: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!(
