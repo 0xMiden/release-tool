@@ -154,6 +154,7 @@ dependencies = ["format-rust"]
 description = "Runs cargo fmt to check appropriate code format."
 category = "Test"
 command = "cargo"
+toolchain = "nightly"
 args = ["fmt", "--", "--check"]
 dependencies = ["install-rustfmt"]
 
@@ -161,6 +162,7 @@ dependencies = ["install-rustfmt"]
 category = "Development"
 description = "Formats source code (Rust)"
 command = "cargo"
+toolchain = "nightly"
 args = ["fmt"]
 dependencies = ["install-rustfmt"]
 
@@ -300,7 +302,6 @@ args = [
     "@@split(CARGO_MAKE_CARGO_BUILD_TEST_FLAGS, )",
     "${@}",
 ]
-dependencies = ["cargo-miden"]
 
 [tasks.rustdocs]
 category = "Documentation"
@@ -344,6 +345,7 @@ args = [
 [tasks.release-tool]
 category = "Build"
 description = "Builds release-tool and installs it to the bin folder"
+toolchain = "nightly"
 command = "cargo"
 args = [
     "-Z",
