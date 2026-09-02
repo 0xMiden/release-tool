@@ -1,0 +1,29 @@
+target/
+bin/*
+!bin/filecheck
+!bin/lit
+.crates.toml
+.crates2.json
+
+# Docs platform ignores
+.vscode/*
+!.vscode/tasks.json
+!.vscode/launch.json
+.code
+.idea
+site/
+venv/
+env/
+*.out
+node_modules/
+*DS_Store
+._*
+*.iml
+*.masp
+book/
+
+# Ignore Cargo.lock in test projects, except the component fixtures that
+# intentionally commit their lockfile for reproducible builds.
+tests/**/Cargo.lock
+
+__pycache__/

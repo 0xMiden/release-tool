@@ -1,0 +1,198 @@
+name: CI
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - next
+    paths-ignore:
+      - "**.md"
+      - "**.txt"
+      - "docs/**"
+  pull_request:
+    paths-ignore:
+      - "**.md"
+      - "**.txt"
+      - "docs/**"
+
+env:
+  # Set the new value when the cache grows too much and we hit the runner's disk space limit
+  # via https://github.com/rust-lang/docs.rs/pull/2433
+  RUST_CACHE_KEY: rust-cache-20251212
+
+jobs:
+  workspace_inheritance:
+    name: Workspace inheritance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      # Pin install-action to a release and request the tool explicitly; shortcut
+      # tags can trip zizmor's impostor-commit audit when they are later retagged.
+      - name: Install cargo-binstall
+        uses: taiki-e/install-action@055f5df8c3f65ea01cd41e9dc855becd88953486 # v2.75.18
+        with:
+          tool: cargo-binstall
+      - name: Install workspace inheritance checker
+        run: cargo binstall --no-confirm cargo-workspace-inheritance-check@1.2.0
+      - name: Check workspace inheritance
+        run: cargo workspace-inheritance-check --promotion-threshold 2 --promotion-failure
+
+  lint:
+    name: lint
+    runs-on: warp-ubuntu-latest-x64-8x
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/cleanup-runner
+      - name: Install Rust
+        run: |
+          rustup update --no-self-update
+          rustc --version
+      - name: Cache Cargo
+        uses: WarpBuilds/rust-cache@9d0cc3090d9c87de74ea67617b246e978735b1a1 # v2.9.1
+        with:
+          # Use a common cache for the basic compilation/formatter/clippy checks
+          shared-key: ${{ github.workflow }}-shared
+          prefix-key: ${{ env.RUST_CACHE_KEY }}
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/next' }}
+      - name: Install cargo-make
+        run: |
+          if ! cargo make --version 2>/dev/null; then
+            cargo install cargo-make --force
+          fi
+      - name: Clippy
+        run: |
+          cargo make clippy
+
+  check_format:
+    name: check formatting
+    runs-on: warp-ubuntu-latest-x64-8x
+    # Run this job after the linter, so the cache is hot
+    needs: [lint]
+    # But run this check even if the lint check failed
+    if: ${{ always() }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/cleanup-runner
+      - name: Install Rust
+        run: |
+          rustup update --no-self-update
+          rustc --version
+      - name: Cache Cargo
+        uses: WarpBuilds/rust-cache@9d0cc3090d9c87de74ea67617b246e978735b1a1 # v2.9.1
+        with:
+          # Use a common cache for the basic compilation/formatter/clippy checks
+          shared-key: ${{ github.workflow }}-shared
+          prefix-key: ${{ env.RUST_CACHE_KEY }}
+          # But do not save this cache, just use it
+          save-if: false
+      - name: Install cargo-make
+        run: |
+          if ! cargo make --version 2>/dev/null; then
+            cargo install cargo-make --force
+          fi
+      - name: Check Formatting
+        run: |
+          cargo make check-format
+
+  check_unused:
+    name: check for unused items/dependencies
+    runs-on: ubuntu-latest
+    # Run this job after the linter, so the cache is hot
+    needs: [lint]
+    # But run this check even if the lint check failed
+    if: ${{ always() }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/cleanup-runner
+      - name: Install Rust
+        run: |
+          rustup update --no-self-update
+          rustc --version
+      - name: Install cargo-shear
+        uses: taiki-e/install-action@055f5df8c3f65ea01cd41e9dc855becd88953486 # v2.75.18
+        with:
+          tool: cargo-shear@1.11.2
+      - name: Install cargo-make
+        run: |
+          if ! cargo make --version 2>/dev/null; then
+            cargo install cargo-make --force
+          fi
+      - name: Check for unused dependencies
+        run: cargo make unused
+
+  unit_tests:
+    name: midenc unit tests
+    runs-on: warp-ubuntu-latest-x64-8x
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/cleanup-runner
+      - name: Install Rust
+        run: |
+          rustup update --no-self-update
+          rustc --version
+      - name: Cache Cargo
+        uses: WarpBuilds/rust-cache@9d0cc3090d9c87de74ea67617b246e978735b1a1 # v2.9.1
+        with:
+          # NOTE: We use a different cache for the tests, so they can be run in parallel, but we
+          # also share the cache for the tests for efficiency
+          shared-key: ${{ github.workflow }}-shared-tests
+          prefix-key: ${{ env.RUST_CACHE_KEY }}
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/next' }}
+      - name: Install cargo-make
+        run: |
+          if ! cargo make --version 2>/dev/null; then
+            cargo install cargo-make --force
+          fi
+      - name: Check
+        # We run `cargo check` to verify that the workspace compiles correctly before attempting
+        # to execute the tests from each crate. This produces easier to read output if a compilation
+        # error occurs
+        run: |
+          cargo make check --tests
+      - name: Test
+        run: |
+          cargo make test
+
+  check_release:
+    name: release checks
+    runs-on: warp-ubuntu-latest-x64-8x
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/cleanup-runner
+      - name: Install Rust
+        run: |
+          rustup update --no-self-update
+          rustc --version
+      - name: Cache Cargo
+        uses: WarpBuilds/rust-cache@9d0cc3090d9c87de74ea67617b246e978735b1a1 # v2.9.1
+        with:
+          # NOTE: We use a different cache for the these release checks
+          shared-key: ${{ github.workflow }}-shared-release-checks
+          prefix-key: ${{ env.RUST_CACHE_KEY }}
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/next' }}
+      - name: Install cargo-make
+        run: |
+          if ! cargo make --version 2>/dev/null; then
+            cargo install cargo-make --force
+          fi
+      - name: Check(release)
+        # We run `check` with `--release` to check the release build (without
+        # `debug_assertions`, etc.)
+        run: |
+          cargo make check --release --tests
