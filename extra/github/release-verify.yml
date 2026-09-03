@@ -79,7 +79,7 @@ jobs:
       - *install-release-tool
 
       - name: Verify the package closure
-        run: ./target/debug/release-tool verify-closure --cache-dir "${RUNNER_TEMP}/index-cache"
+        run: release-tool verify-closure --cache-dir "${RUNNER_TEMP}/index-cache"
 
   workflow-policy:
     name: workflow policy
