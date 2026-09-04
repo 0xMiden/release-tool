@@ -32,6 +32,10 @@ jobs:
     permissions:
       contents: read
     steps:
+      - &install-release-tool
+        name: Build release-tool
+        run: cargo install --locked --force miden-release-tool
+
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           ref: ${{ inputs.ref }}
@@ -44,10 +48,6 @@ jobs:
         run: |
           rustup update --no-self-update
           rustc --version
-
-      - &install-release-tool
-        name: Build release-tool
-        run: cargo install --locked --force miden-release-tool
 
       # Package classification, publishability, private-dependency edges, the
       # frozen private-crate versions, and active `[patch]` entries. An active
@@ -70,13 +70,14 @@ jobs:
     permissions:
       contents: read
     steps:
+      - *install-release-tool
+
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           ref: ${{ inputs.ref }}
           persist-credentials: false
 
       - *install-rust
-      - *install-release-tool
 
       - name: Verify the package closure
         run: release-tool verify-closure --cache-dir "${RUNNER_TEMP}/index-cache"
