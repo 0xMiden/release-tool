@@ -56,7 +56,7 @@ pub trait GitHub: Send + Sync {
     /// The commit a tag points at, or `None` if the tag does not exist.
     fn tag_commit(&self, tag: &str) -> Result<Option<String>>;
 
-    /// Create a draft release for a tag that need not exist yet.
+    /// Create a draft release named after its tag, which need not exist yet.
     fn create_draft(&self, tag: &str, commit: &str, prerelease: bool) -> Result<Release>;
 
     fn release_by_tag(&self, tag: &str) -> Result<Option<Release>>;
