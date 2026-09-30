@@ -50,6 +50,28 @@ fn a_tag_left_by_an_earlier_attempt_is_recognised_as_a_resume() {
     );
 }
 
+/// Every unit's release title matches its tag before and after publication.
+#[test]
+fn release_titles_match_tags() {
+    let server = StubServer::start().unwrap();
+    let github = client(&server);
+
+    for (tag, prerelease) in [
+        ("v1.0.0", false),
+        ("v1.0.0-rc.1", true),
+        ("sdk/v0.14.0", false),
+        ("sdk/v0.14.0-rc.1", true),
+        ("templates/v0.32.0", false),
+        ("templates/v0.32.0-rc.1", true),
+    ] {
+        let release = github.create_draft(tag, "abc123", prerelease).unwrap();
+        assert_eq!(server.release_name(tag).as_deref(), Some(tag));
+
+        github.publish_release(release.id, false).unwrap();
+        assert_eq!(server.release_name(tag).as_deref(), Some(tag));
+    }
+}
+
 #[test]
 fn a_draft_carries_assets_and_publishes() {
     let server = StubServer::start().unwrap();
