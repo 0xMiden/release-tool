@@ -32,6 +32,13 @@ jobs:
     permissions:
       contents: read
     steps:
+      - &install-release-tool
+        name: Build release-tool
+        env:
+          REV: ${{ inputs.ref }}
+        run: |
+            cargo install --locked --force --git https://github.com/0xMiden/release-tool --rev "${REV}" miden-release-tool
+
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           ref: ${{ inputs.ref }}
@@ -44,17 +51,6 @@ jobs:
         run: |
           rustup update --no-self-update
           rustc --version
-
-      - &install-cargo-make
-        name: Install cargo-make
-        run: |
-          if ! cargo make --version 2>/dev/null; then
-            cargo install cargo-make --force
-          fi
-
-      - &install-release-tool
-        name: Build release-tool
-        run: cargo make install-release-tool
 
       # Package classification, publishability, private-dependency edges, the
       # frozen private-crate versions, and active `[patch]` entries. An active
@@ -77,17 +73,17 @@ jobs:
     permissions:
       contents: read
     steps:
+      - *install-release-tool
+
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           ref: ${{ inputs.ref }}
           persist-credentials: false
 
       - *install-rust
-      - *install-cargo-make
-      - *install-release-tool
 
       - name: Verify the package closure
-        run: ./target/debug/release-tool verify-closure --cache-dir "${RUNNER_TEMP}/index-cache"
+        run: release-tool verify-closure --cache-dir "${RUNNER_TEMP}/index-cache"
 
   workflow-policy:
     name: workflow policy

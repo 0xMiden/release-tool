@@ -5,11 +5,9 @@
 # set-version`, then reviewed and merged like any other change.
 
 schema-version = 1
-units = [
-    "main",
-]
+units = ["main"]
 
 [main]
-version = "0.1.0"
-tag = "v0.1.0"
+version = "0.2.0"
+tag = "v0.2.0"
 prerelease = false
