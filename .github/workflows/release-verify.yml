@@ -34,7 +34,10 @@ jobs:
     steps:
       - &install-release-tool
         name: Build release-tool
-        run: cargo install --locked --force miden-release-tool
+        env:
+          REV: ${{ inputs.ref }}
+        run: |
+            cargo install --locked --force --git https://github.com/0xMiden/release-tool --rev "${REV}" miden-release-tool
 
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:

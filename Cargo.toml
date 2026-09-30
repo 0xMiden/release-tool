@@ -1,7 +1,7 @@
 [package]
-name = "midenc-release"
+name = "miden-release-tool"
 description = "Release tooling for Miden repos"
-version = "0.1.0"
+version = "0.2.0"
 rust-version = "1.97"
 authors = ["Miden contributors"]
 repository = "https://github.com/0xMiden/release-tool"
@@ -14,7 +14,7 @@ readme = "README.md"
 edition = "2024"
 
 [lib]
-name = "midenc_release"
+name = "miden_release_tool"
 path = "src/lib.rs"
 
 [[bin]]

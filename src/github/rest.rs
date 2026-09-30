@@ -311,6 +311,7 @@ impl GitHub for RestGitHub {
     fn create_draft(&self, tag: &str, commit: &str, prerelease: bool) -> Result<Release> {
         let payload = serde_json::json!({
             "tag_name": tag,
+            "name": tag,
             "target_commitish": commit,
             "draft": true,
             "prerelease": prerelease,

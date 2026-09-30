@@ -8,7 +8,7 @@
 
 use std::{fs, path::Path};
 
-use midenc_release::{config::Config, version, workspace::Workspace};
+use miden_release_tool::{config::Config, version, workspace::Workspace};
 
 fn write(path: &Path, contents: &str) {
     fs::create_dir_all(path.parent().unwrap()).unwrap();

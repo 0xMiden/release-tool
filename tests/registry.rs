@@ -15,7 +15,7 @@ use std::{
     sync::Arc,
 };
 
-use midenc_release::registry::{Faults, NoUpstream, Registry};
+use miden_release_tool::registry::{Faults, NoUpstream, Registry};
 
 /// Two interdependent crates at versions that exist on no registry. This is the
 /// shape every real release has, and the shape that fails if packages are
@@ -209,7 +209,7 @@ fn an_owned_crate_is_never_resolved_upstream() {
     /// for a workspace whose current version has already shipped.
     #[derive(Debug)]
     struct EverythingUpstream;
-    impl midenc_release::registry::Upstream for EverythingUpstream {
+    impl miden_release_tool::registry::Upstream for EverythingUpstream {
         fn fetch_index(&self, _path: &str) -> Option<Vec<u8>> {
             Some(
                 br#"{"name":"rehearsal-leaf","vers":"0.1.0","deps":[],"cksum":"00","features":{},"yanked":false}
@@ -277,7 +277,7 @@ fn http_get_status(host: &str, path: &str) -> u16 {
 /// dependency order. This is the same code path a first attempt takes.
 #[test]
 fn reconciliation_after_a_partial_publish_yields_only_what_remains() {
-    use midenc_release::{
+    use miden_release_tool::{
         reconcile::{self, Disposition, Planned},
         registry::client::SparseIndex,
         workspace::{EdgeKind, Package, Workspace},

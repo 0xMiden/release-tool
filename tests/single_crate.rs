@@ -5,7 +5,7 @@
 
 use std::{fs, path::Path, process::Command};
 
-use midenc_release::{config::Config, version, workspace::Workspace};
+use miden_release_tool::{config::Config, version, workspace::Workspace};
 
 fn write(path: &Path, contents: &str) {
     fs::create_dir_all(path.parent().unwrap()).unwrap();
@@ -132,7 +132,7 @@ fn a_root_package_has_a_usable_changelog_path() {
     let config = Config::load(&dir.join(".release/config.toml")).unwrap();
 
     // `.`, not `""`: an empty pathspec is fatal to `git log`.
-    let prompt = midenc_release::changelog::prepare(&ws, &config, "main", Some("HEAD".into()));
+    let prompt = miden_release_tool::changelog::prepare(&ws, &config, "main", Some("HEAD".into()));
     let paths = prompt.map(|p| p.paths).unwrap_or_default();
     assert_eq!(paths, ["."], "a root package's path must be '.'");
 }

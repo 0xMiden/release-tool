@@ -8,7 +8,7 @@
 
 use std::{fs, path::Path, sync::Arc};
 
-use midenc_release::{
+use miden_release_tool::{
     closure,
     executor::{self, Options, Target},
     github::NoGitHub,
@@ -121,7 +121,7 @@ fn intent() -> Intent {
 }
 
 /// Release policy for the fixture: one package in each of two `crates` units.
-fn config(dir: &Path) -> midenc_release::config::Config {
+fn config(dir: &Path) -> miden_release_tool::config::Config {
     let path = dir.join("release-config.toml");
     fs::write(
         &path,
@@ -150,7 +150,7 @@ unit = "compiler"
 "#,
     )
     .unwrap();
-    midenc_release::config::Config::load(&path).unwrap()
+    miden_release_tool::config::Config::load(&path).unwrap()
 }
 
 /// Seal a plan by actually packaging, so the digests are real.
@@ -332,7 +332,7 @@ fn a_checksum_conflict_stops_the_release_before_publishing() {
     let registry = Registry::start(0, Faults::default(), Arc::new(NoUpstream)).unwrap();
 
     // Someone else already holds exec-sdk 0.1.0, with different bytes.
-    let foreign = midenc_release::registry::client::StubIndex::new().publish(
+    let foreign = miden_release_tool::registry::client::StubIndex::new().publish(
         "exec-sdk",
         "0.1.0",
         "not-our-bytes",

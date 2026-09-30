@@ -27,10 +27,12 @@ struct State {
     assets: BTreeMap<u64, BTreeMap<String, (u64, Vec<u8>)>>,
 }
 
+/// A release stored by the stub API.
 #[derive(Debug, Clone)]
 struct ReleaseRecord {
     id: u64,
     tag: String,
+    name: Option<String>,
     draft: bool,
     prerelease: bool,
     commit: String,
@@ -83,6 +85,17 @@ impl StubServer {
             .values()
             .find(|r| r.tag == tag)
             .map(|r| r.draft)
+    }
+
+    /// The explicit title of a release, if one was provided.
+    pub fn release_name(&self, tag: &str) -> Option<String> {
+        self.state
+            .lock()
+            .unwrap()
+            .releases
+            .values()
+            .find(|r| r.tag == tag)
+            .and_then(|r| r.name.clone())
     }
 }
 
@@ -199,6 +212,7 @@ fn dispatch(
             let record = ReleaseRecord {
                 id: state.next_id,
                 tag: payload["tag_name"].as_str().unwrap_or_default().to_string(),
+                name: payload["name"].as_str().map(str::to_string),
                 draft: payload["draft"].as_bool().unwrap_or(false),
                 prerelease: payload["prerelease"].as_bool().unwrap_or(false),
                 commit: payload["target_commitish"].as_str().unwrap_or_default().to_string(),
@@ -261,6 +275,9 @@ fn dispatch(
             };
             if let Some(draft) = payload["draft"].as_bool() {
                 record.draft = draft;
+            }
+            if let Some(name) = payload.get("name") {
+                record.name = name.as_str().map(str::to_string);
             }
             let record = record.clone();
             (200, release_json(&record, addr).into_bytes())
@@ -375,6 +392,7 @@ fn release_json(record: &ReleaseRecord, addr: SocketAddr) -> String {
     serde_json::json!({
         "id": record.id,
         "tag_name": record.tag,
+        "name": record.name,
         "draft": record.draft,
         "prerelease": record.prerelease,
         "target_commitish": record.commit,
